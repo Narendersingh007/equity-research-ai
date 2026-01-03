@@ -217,4 +217,4 @@ venv.bak/
 
 # Local database folders (if we use them temporarily)
 chroma_db/
-__pycache__/
+__pycache__/venv/

@@ -1,0 +1,7 @@
+langchain
+langchain-google-genai
+langchain-community
+pinecone-client
+python-dotenv
+beautifulsoup4
+tiktoken
