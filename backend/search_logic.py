@@ -2,13 +2,10 @@ import os
 import logging
 import requests
 import string
+import feedparser
+import trafilatura
 from typing import Dict, Any
-from datetime import datetime, timedelta
 from dotenv import load_dotenv
-
-# --- Environment hygiene ---
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
-load_dotenv()
 
 # --- LangChain imports ---
 from langchain_core.prompts import ChatPromptTemplate
@@ -22,25 +19,29 @@ from langchain_pinecone import PineconeVectorStore
 from langchain_openai import ChatOpenAI
 from langchain_community.chat_models import ChatOllama
 
-# --- Logging ---
+# --- Environment & Logging ---
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+load_dotenv()
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
     datefmt="%H:%M:%S",
 )
+# Silence internal noise
+logging.getLogger('trafilatura').setLevel(logging.CRITICAL)
 logger = logging.getLogger(__name__)
 
 # --- Configuration ---
 EMBEDDING_MODEL = "intfloat/e5-small-v2"
 INDEX_NAME = os.getenv("INDEX_NAME")
 
-
 class RAGPipeline:
     """
     Equity Research RAG Pipeline
     - Local embeddings (e5-small-v2)
     - Pinecone for historical context
-    - Live NewsAPI for recent events
+    - Google News RSS Summaries (Top 10) - FAST & STABLE
     - OpenRouter LLM with multi-fallback
     """
 
@@ -62,7 +63,7 @@ class RAGPipeline:
         # 3️⃣ Retriever
         self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 6})
 
-        # 4️⃣ LLMs (OpenRouter)
+        # 4️⃣ LLMs
         self.primary_llm = ChatOpenAI(
             model="google/gemini-2.0-flash-exp:free",
             base_url="https://openrouter.ai/api/v1",
@@ -70,7 +71,6 @@ class RAGPipeline:
             temperature=0.3,
         )
 
-        # ✅ MULTI FALLBACK (SAFE MODELS)
         self.fallback_llms = [
             ChatOpenAI(
                 model="mistralai/mistral-small-3.1-24b-instruct:free",
@@ -78,192 +78,110 @@ class RAGPipeline:
                 api_key=os.getenv("OPENROUTER_API_KEY"),
                 temperature=0.3,
             ),
-            ChatOpenAI(
-                model="mistralai/mistral-7b-instruct:free",
-                base_url="https://openrouter.ai/api/v1",
-                api_key=os.getenv("OPENROUTER_API_KEY"),
-                temperature=0.3,
-            ),
-
         ]
-        self.local_llm = ChatOllama(
-            model="phi3",
-            temperature=0.3,
-        )
+        self.local_llm = ChatOllama(model="phi3", temperature=0.3)
 
         # 5️⃣ Build chain
         self.chain = self._build_chain()
         logger.info("✅ RAG Chain initialized.")
 
-    # -----------------------------------------------------
+
     # Helpers
-    # -----------------------------------------------------
+
 
     def _extract_keywords(self, query: str) -> str:
         stop_words = {
             "why", "is", "the", "what", "how", "when",
-            "did", "does", "a", "an", "in", "on", "of", "for"
+            "did", "does", "a", "an", "in", "on", "of", "for",
+            "update", "with", "stock", "today", "news", "price"
         }
         clean = query.translate(str.maketrans("", "", string.punctuation))
         return " ".join(w for w in clean.split() if w.lower() not in stop_words)
-    def _sentiment_label(self, score: float) -> str:
-        if score <= -0.2:
-            return "Negative"
-        elif score >= 0.2:
-            return "Positive"
-        return "Neutral"
 
-
-    def _confidence_label(self, article_count: int, sentiment_strength: float) -> str:
-        if article_count >= 3 or abs(sentiment_strength) >= 0.5:
-            return "High"
-        if article_count >= 1:
-            return "Medium"
-        return "Low"
-
-    def _fetch_live_news(self, inputs: Dict[str, Any]) -> str:
-        query = self._extract_keywords(inputs["question"])
-        if len(query.split()) < 2:
+    def _get_robust_stock_news(self, ticker_or_company: str) -> str:
+        """
+        Fetches Top 10 Google News RSS Summaries.
+        Zero scraping overhead = Maximum speed & stability.
+        """
+        if not ticker_or_company.strip():
             return ""
 
-        from_date = (datetime.utcnow() - timedelta(days=7)).strftime("%Y-%m-%d")
+        # Google News RSS URL
+        rss_url = f"https://news.google.com/rss/search?q={ticker_or_company}+stock+news+when:1d&hl=en-US&gl=US&ceid=US:en"
+        
+        feed = None
+        try:
+            # We must download the XML ourselves because feedparser gets blocked by Google
+            headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+            resp = requests.get(rss_url, headers=headers, timeout=5)
+            feed = feedparser.parse(resp.content)
+        except Exception as e:
+            logger.error(f"RSS Fetch Error: {e}")
+            return "Error fetching live news feed."
 
-        # =========================
-        # 1️⃣ MARKETAUX (PRIMARY)
-        # =========================
-        marketaux_key = os.getenv("MARKETAUX_API_KEY")
-        if marketaux_key:
+        rag_output_lines = []
+        
+        if not feed or not feed.entries:
+            return "No relevant news found via RSS."
+        
+        # --- PROCESS TOP 10 SUMMARIES ---
+        limit = 10
+        logger.info(f"Found {len(feed.entries)} articles. Extracting top {limit} summaries...")
+
+        for entry in feed.entries[:limit]:
+            title = entry.title
+            source = entry.source.title if hasattr(entry, 'source') else "Unknown"
+            published = entry.published if hasattr(entry, 'published') else "Unknown"
+            
+            # Just grab the summary provided by Google
+            summary_raw = entry.summary if hasattr(entry, 'summary') else ""
+            
+            # Clean HTML tags from the summary
+            content = ""
             try:
-                url = (
-                    "https://api.marketaux.com/v1/news/all?"
-                    f"search={query}"
-                    f"&published_after={from_date}"
-                    "&language=en"
-                    "&limit=6"
-                    f"&api_token={marketaux_key}"
-                )
-                resp = requests.get(url, timeout=10)
-                data = resp.json()
+                summary_clean = trafilatura.extract(summary_raw)
+                content = summary_clean if summary_clean else summary_raw
+            except:
+                content = summary_raw
 
-                articles = data.get("data", [])
-                if articles:
-                    descriptions = []
-                    sentiments = []
+            rag_output_lines.append(f"SOURCE: {source} ({published})\nTITLE: {title}\nSUMMARY: {content}\n")
 
-                    for art in articles[:6]:
-                        # ---- description / snippet ----
-                        desc = art.get("description") or art.get("snippet")
-                        if desc:
-                            descriptions.append(f"- {desc}")
+        return "\n".join(rag_output_lines)
 
-                        # ---- extract sentiment for TSLA ----
-                        for ent in art.get("entities", []):
-                            if ent.get("symbol") in {"TSLA", "Tesla"}:
-                                score = ent.get("sentiment_score")
-                                if isinstance(score, (int, float)):
-                                    sentiments.append(score)
+    def _fetch_live_news(self, inputs: Dict[str, Any]) -> str:
+        query_keywords = self._extract_keywords(inputs["question"])
+        if len(query_keywords.split()) < 1:
+            return ""
+        logger.info(f"Fetching news for: {query_keywords}")
+        return self._get_robust_stock_news(query_keywords)
 
-                    avg_sentiment = (
-                        sum(sentiments) / len(sentiments)
-                        if sentiments else 0.0
-                    )
-
-                    sentiment_label = self._sentiment_label(avg_sentiment)
-                    confidence = self._confidence_label(len(descriptions), avg_sentiment)
-
-                    summary = (
-                        "--- LIVE FINANCIAL NEWS (Marketaux | Last 24h) ---\n"
-                        f"Market Sentiment: {sentiment_label} "
-                        f"(avg score: {avg_sentiment:.2f})\n"
-                        f"Confidence: {confidence}\n\n"
-                        "Key Points:\n"
-                        + "\n".join(descriptions)
-                    )
-
-                    return summary
-
-            except Exception as e:
-                logger.warning(f"Marketaux failed: {e}")
-
-        # =========================
-        # 2️⃣ GNEWS (FALLBACK)
-        # =========================
-        gnews_key = os.getenv("GNEWS_API_KEY")
-        if gnews_key:
-            try:
-                url = (
-                    "https://gnews.io/api/v4/search?"
-                    f"q={query}&from={from_date}"
-                    "&lang=en&max=3&sortby=publishedAt"
-                    f"&apikey={gnews_key}"
-                )
-                resp = requests.get(url, timeout=10)
-                data = resp.json()
-
-                articles = data.get("articles", [])
-                if articles:
-                    summary = "--- LIVE NEWS (GNews | Last 24h) ---\n"
-                    for i, art in enumerate(articles, 1):
-                        summary += (
-                            f"{i}. {art['title']} "
-                            f"({art['publishedAt']}) - {art['source']['name']}\n"
-                        )
-                    return summary
-
-            except Exception as e:
-                logger.warning(f"GNews failed: {e}")
-
-    # =========================
-    # No live news found
-    # =========================
-        return ""
     def _format_docs(self, docs):
         return "\n\n".join(doc.page_content for doc in docs)
 
     def _get_embedding_query(self, inputs: Dict[str, Any]) -> str:
         return f"query: {inputs['question']}"
 
-    # -----------------------------------------------------
-    # Chain (NO LLM here)
-    # -----------------------------------------------------
+    
+    # Chain Construction
+    
 
     def _build_chain(self):
         prompt = ChatPromptTemplate.from_template(
             """You are a senior Equity Research Analyst AI.
-
 The user is asking about a SPECIFIC company.
-You MUST ONLY discuss the company explicitly mentioned in the question.
-Do NOT discuss other companies unless they are directly referenced in LIVE_NEWS
-AND are clearly relevant to the same event.
+Use the LIVE_NEWS (Summaries) and HISTORY contexts to answer.
 
-If LIVE_NEWS does not contain information about the company in question,
-you MUST explicitly say:
-"No company-specific news was found in the past 7 days."
-
-Rules:
-- Prioritize LIVE_NEWS for the last 7 days
-- Use HISTORY only for background on THE SAME COMPANY
-- Do NOT substitute other companies (e.g., Microsoft, Apple) as examples
-- Do NOT generalize to the broader market unless explicitly supported
-- If evidence is weak, say so clearly
-
-Format your answer as:
-1. Company-specific recent developments (past 7 days)
-2. Market sentiment related to THIS company
-3. Relevant historical or recurring factors
-4. Overall assessment
-
-<LIVE_NEWS>
+<LIVE_NEWS_SUMMARIES>
 {live_context}
-</LIVE_NEWS>
+</LIVE_NEWS_SUMMARIES>
 
 <HISTORY>
 {historical_context}
 </HISTORY>
 
 Question: {question}
-
-Answer:""")
+Answer:"""
+        )
 
         retrieval = RunnableParallel(
             historical_context=(
@@ -281,63 +199,32 @@ Answer:""")
             | prompt
         )
 
-    # -----------------------------------------------------
-    # Public API with SAFE multi-fallback
-    # -----------------------------------------------------
-
     def get_answer(self, query: str) -> str:
         messages = None
-
-        # ---- Try primary cloud model ----
         try:
             messages = self.chain.invoke(query)
-            response = self.primary_llm.invoke(messages).content
-            logger.info(
-                f"✅ Answered by PRIMARY model: {self.primary_llm.model_name}"
-            )
-            return response
-
+            if not messages: return "Error building context."
+            
+            return self.primary_llm.invoke(messages).content
         except Exception as e:
-            logger.warning(
-                f"Primary LLM failed ({self.primary_llm.model_name}): {e}"
-            )
-
-        # ---- Try cloud fallbacks sequentially ----
-        for idx, llm in enumerate(self.fallback_llms, start=1):
+            logger.warning(f"Primary failed: {e}")
+            
+            # Fallback loop
+            if messages:
+                for llm in self.fallback_llms:
+                    try:
+                        return llm.invoke(messages).content
+                    except:
+                        continue
+            
+            # Local fallback
             try:
-                logger.info(
-                    f"🔁 Trying FALLBACK #{idx}: {llm.model_name}"
-                )
-                response = llm.invoke(messages).content
-                logger.info(
-                    f"✅ Answered by FALLBACK #{idx}: {llm.model_name}"
-                )
-                return response
+                return self.local_llm.invoke(messages).content
+            except:
+                return "System temporarily unavailable."
 
-            except Exception as e:
-                logger.warning(
-                    f"Fallback #{idx} failed ({llm.model_name}): {e}"
-                )
-
-        # ---- FINAL LOCAL OLLAMA FALLBACK ----
-        try:
-            logger.info("🧠 Using LOCAL Ollama (phi3)")
-            response = self.local_llm.invoke(messages).content
-            logger.info("✅ Answered by LOCAL Ollama: phi3")
-            return response
-
-        except Exception as e:
-            logger.error(f"❌ Local Ollama failed: {e}")
-
-        logger.error("❌ All LLMs failed")
-        return "The system is temporarily unavailable."
-
-# ---------------------------------------------------------
-# Manual test
-# ---------------------------------------------------------
 if __name__ == "__main__":
     pipeline = RAGPipeline()
-
-    q = "Why is Tesla stock down today?"
+    q = "What is update with nvidia stock today?"
     print(f"\n🔎 Query: {q}\n" + "-" * 40)
     print(pipeline.get_answer(q))
