@@ -1,128 +1,158 @@
 import streamlit as st
-import json
+import pandas as pd
+import sys
 import os
-from dotenv import load_dotenv
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_pinecone import PineconeVectorStore
+import time
 
-# --- 1. SETUP PATHS & ENV ---
-# Get the root directory (one level up from frontend)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# --- PATH SETUP (Crucial for importing backend) ---
+# This allows us to import from the 'backend' folder
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# CORRECTED: Load .env from the 'backend' folder
-env_path = os.path.join(BASE_DIR, "backend", ".env")
-load_dotenv(env_path, override=True)
+try:
+    from backend.search_logic import RAGPipeline
+except ImportError:
+    st.error("⚠️ Could not import Backend. Please run the app from the root directory: `streamlit run frontend/app.py`")
+    st.stop()
 
-# Debug: Print to terminal to confirm it found the file
-print(f"Loading env from: {env_path}")
-print(f"API Key found: {bool(os.getenv('PINECONE_API_KEY'))}")
+# --- PAGE CONFIG ---
+st.set_page_config(
+    layout="wide", 
+    page_title="Equity Research AI",
+    page_icon="📈"
+)
 
-# --- CONFIGURATION ---
-ST_PAGE_TITLE = "Volatile 30 Tracker"
-# Point to data/market_data.json in the root (created by update_prices.py)
-DATA_FILE = os.path.join(BASE_DIR, "data", "market_data.json")
-INDEX_NAME = os.getenv("INDEX_NAME")
-EMBEDDING_MODEL = "intfloat/e5-small-v2"
+# --- CSS STYLING ---
+st.markdown("""
+<style>
+    .metric-card {
+        background-color: #0E1117;
+        padding: 15px;
+        border-radius: 10px;
+        border: 1px solid #30333F;
+        text-align: center;
+    }
+    .stTextInput > div > div > input {
+        background-color: #262730;
+        color: white; 
+    }
+    .ai-answer {
+        background-color: #1E1E1E;
+        padding: 20px;
+        border-radius: 10px;
+        border-left: 5px solid #4CAF50;
+        margin-top: 20px;
+    }
+</style>
+""", unsafe_allow_html=True)
 
+# --- HEADER ---
+st.title("📈 Equity Research AI Agent")
+st.markdown("**Live Market Data • RAG Analysis • SEC Filings (10-K)**")
 
-st.set_page_config(page_title=ST_PAGE_TITLE, layout="wide")
-
-# --- 1. LOAD MARKET DATA (JSON) ---
-@st.cache_data
-def load_market_data():
-    if not os.path.exists(DATA_FILE):
-        return []
-    with open(DATA_FILE, "r") as f:
-        return json.load(f)
-
-# --- 2. SETUP SEARCH ENGINE (PINECONE) ---
-@st.cache_resource
-def get_vectorstore():
-    # Only load if user asks a question to save resources
-    if not os.getenv("PINECONE_API_KEY"):
-        st.error("Missing PINECONE_API_KEY in .env")
-        return None
-        
-    embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
-    vectorstore = PineconeVectorStore(
-        index_name=INDEX_NAME, 
-        embedding=embeddings
-    )
-    return vectorstore
-
-# --- UI LAYOUT ---
-st.title(f"⚡ {ST_PAGE_TITLE}")
-st.markdown("Monitor the world's most volatile companies and ask semantic questions about their risks.")
-
-# Load Data
-companies = load_market_data()
-
-if not companies:
-    st.error("No data found! Run 'python backend/update_prices.py' first.")
-else:
-    # --- METRIC GRID ---
-    # Display top 4 most volatile (highest Beta)
-    sorted_companies = sorted(companies, key=lambda x: x['beta'], reverse=True)
+# --- SIDEBAR: AI BRAIN CONTROL ---
+with st.sidebar:
+    st.header("⚙️ Neural Engine")
     
-    st.subheader("🔥 Top Movers (High Volatility)")
-    cols = st.columns(4)
-    for idx, company in enumerate(sorted_companies[:4]):
-        with cols[idx]:
-            st.metric(
-                label=company['name'],
-                value=f"${company['price']:.2f}",
-                delta=f"{company['change_percent']:.2f}%"
-            )
+    # Initialize Pipeline (Cached so it doesn't reload on every click)
+    @st.cache_resource
+    def load_pipeline():
+        return RAGPipeline()
+    
+    with st.spinner("🧠 Loading AI Models..."):
+        try:
+            rag = load_pipeline()
+            st.success("✅ System Online")
+        except Exception as e:
+            st.error(f"❌ System Offline: {e}")
+            st.stop()
+            
+    st.markdown("---")
+    st.info(f"**Connected Index:** `{os.getenv('INDEX_NAME', 'finance-news')}`")
+    st.markdown("### 📚 Ingested Knowledge")
+    st.code("NVDA (2024 10-K)\nTSLA (Coming Soon)\nAAPL (Coming Soon)")
 
-    st.divider()
+# --- MAIN SEARCH AREA ---
+col_search, col_stats = st.columns([2, 1])
 
-    # --- MAIN INTERFACE: TWO COLUMNS ---
-    col1, col2 = st.columns([1, 2])
+with col_search:
+    st.subheader("🤖 Ask the Analyst")
+    query = st.text_input(
+        "Query", 
+        placeholder="e.g., 'What are Nvidia's specific supply chain risks?'",
+        label_visibility="collapsed"
+    )
 
-    with col1:
-        st.subheader("Select Company")
-        selected_ticker = st.selectbox(
-            "Choose a ticker to analyze:", 
-            [c['id'] for c in companies]
+    if query:
+        st.write("---")
+        with st.spinner("🔎 Reading 10-K Reports & Checking Live News..."):
+            # 1. Timer Start
+            start_time = time.time()
+            
+            # 2. Get Answer from Backend
+            response = rag.get_answer(query)
+            
+            # 3. Calculate Speed
+            duration = time.time() - start_time
+            
+        # 4. Display Result
+        st.markdown(f"**⏱️ Analysis generated in {duration:.2f} seconds**")
+        st.markdown(f"""
+        <div class="ai-answer">
+            {response}
+        </div>
+        """, unsafe_allow_html=True)
+
+# --- MARKET DATA DASHBOARD ---
+st.markdown("---")
+st.subheader("📊 Market Intelligence")
+
+data_path = "backend/data/market_data.json"
+if os.path.exists(data_path):
+    try:
+        # 1. Load Data
+        df = pd.read_json(data_path)
+        if 'id' in df.columns: df = df.rename(columns={'id': 'ticker'})
+        
+        # 2. Key Metrics
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Tracked Companies", len(df))
+        m2.metric("Avg P/E Ratio", f"{df['pe_ratio'].mean():.2f}")
+        m3.metric("High Volatility (>1.5)", df[df['beta'] > 1.5].shape[0])
+        m4.metric("Sector Spread", df['sector'].nunique())
+
+        # 3. NATIVE PLOTLY HEATMAP (Browser-Safe)
+        st.markdown("### 🗺️ Sector Heatmap")
+        
+        import plotly.express as px
+        
+        # Ensure we have numeric data for the chart
+        df['market_cap'] = pd.to_numeric(df['market_cap'], errors='coerce').fillna(0)
+        df['change_percent'] = pd.to_numeric(df['change_percent'], errors='coerce').fillna(0)
+
+        # Create the Tree Map
+        fig = px.treemap(
+            df,
+            path=[px.Constant("Market"), 'sector', 'ticker'], # Hierarchy: Market -> Sector -> Company
+            values='market_cap',                              # Size of block = Market Cap
+            color='change_percent',                           # Color of block = Price Change
+            color_continuous_scale='RdYlGn',                  # Red to Green
+            color_continuous_midpoint=0,                      # Zero is the center (Yellow/White)
+            hover_data={'price': True, 'pe_ratio': True, 'market_cap': ':.2e'},
+            title=''
         )
         
-        # Show specific company stats
-        company_info = next((c for c in companies if c['id'] == selected_ticker), None)
-        if company_info:
-            st.info(f"**Sector:** {company_info['sector']}")
-            st.write(f"**Beta:** {company_info['beta']}")
-            st.write(f"**P/E Ratio:** {company_info['pe_ratio']}")
-            st.write(f"**Market Cap:** ${company_info['market_cap']:,}")
-
-    with col2:
-        st.subheader(f"🧠 AI Analysis: {selected_ticker}")
+        # Style it to look like a Dark Mode Terminal
+        fig.update_layout(
+            margin=dict(t=0, l=0, r=0, b=0),
+            height=500,
+            paper_bgcolor='rgba(0,0,0,0)',  # Transparent background
+            plot_bgcolor='rgba(0,0,0,0)',
+            font=dict(family="Monospace", color="white")
+        )
         
-        query = st.text_input(f"Ask about {selected_ticker}'s long-term risks:", 
-                             placeholder="e.g., What are the supply chain risks?")
-        
-        if query:
-            if selected_ticker == "TSLA":
-                # Connect to Pinecone for Real Search
-                with st.spinner("Searching Pinecone..."):
-                    vectorstore = get_vectorstore()
-                    if vectorstore:
-                        # Filter search specific to the selected company
-                        results = vectorstore.similarity_search(
-                            query, 
-                            k=3,
-                            filter={"ticker": selected_ticker}
-                        )
-                        
-                        if results:
-                            st.success("Found relevant insights:")
-                            for doc in results:
-                                with st.expander(f"Source: {doc.metadata.get('source', 'Unknown')}"):
-                                    st.markdown(doc.page_content)
-                        else:
-                            st.warning("No information found for this specific query.")
-            else:
-                st.warning("⚠️ For this demo, only 'TSLA' has data uploaded. (Try selecting TSLA and asking about 'supply chain')")
+        st.plotly_chart(fig, use_container_width=True)
 
-# --- FOOTER ---
-st.markdown("---")
-st.caption("Data updated daily via 'update_prices.py' | Powered by Pinecone & HuggingFace")
+    except Exception as e:
+        st.error(f"Error loading dashboard: {e}")
+else:
+    st.warning("⚠️ Market data file not found. Run `python backend/update_prices.py` to populate this table.")

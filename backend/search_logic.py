@@ -17,7 +17,8 @@ from langchain_core.runnables import (
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_pinecone import PineconeVectorStore
 from langchain_openai import ChatOpenAI
-from langchain_community.chat_models import ChatOllama
+from langchain_ollama import ChatOllama
+from langchain_groq import ChatGroq  
 
 # --- Environment & Logging ---
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -41,8 +42,9 @@ class RAGPipeline:
     Equity Research RAG Pipeline
     - Local embeddings (e5-small-v2)
     - Pinecone for historical context
-    - Google News RSS Summaries (Top 10) - FAST & STABLE
-    - OpenRouter LLM with multi-fallback
+    - Google News RSS Summaries (Top 10)
+    - PRIMARY LLM: Groq (Llama-3.3-70b) -> Fastest & Free
+    - FALLBACKS: OpenRouter (Gemini/Mistral) -> Local (Phi3)
     """
 
     def __init__(self):
@@ -63,15 +65,27 @@ class RAGPipeline:
         # 3️⃣ Retriever
         self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 6})
 
-        # 4️⃣ LLMs
-        self.primary_llm = ChatOpenAI(
-            model="google/gemini-2.0-flash-exp:free",
-            base_url="https://openrouter.ai/api/v1",
-            api_key=os.getenv("OPENROUTER_API_KEY"),
+        # 4️⃣ LLMs Setup
+        
+
+        groq_key = os.getenv("GROQ_API_KEY")
+        if not groq_key:
+            logger.warning("⚠️ GROQ_API_KEY missing! Primary LLM might fail.")
+            
+        self.primary_llm = ChatGroq(
+            model="llama-3.3-70b-versatile",
             temperature=0.3,
+            api_key=groq_key
         )
 
+
         self.fallback_llms = [
+            ChatOpenAI(
+                model="google/gemini-2.0-flash-exp:free",
+                base_url="https://openrouter.ai/api/v1",
+                api_key=os.getenv("OPENROUTER_API_KEY"),
+                temperature=0.3,
+            ),
             ChatOpenAI(
                 model="mistralai/mistral-small-3.1-24b-instruct:free",
                 base_url="https://openrouter.ai/api/v1",
@@ -79,6 +93,8 @@ class RAGPipeline:
                 temperature=0.3,
             ),
         ]
+        
+        # LAST RESORT: Local Ollama
         self.local_llm = ChatOllama(model="phi3", temperature=0.3)
 
         # 5️⃣ Build chain
@@ -202,26 +218,32 @@ Answer:"""
     def get_answer(self, query: str) -> str:
         messages = None
         try:
+            # 1. Build context (News + History)
             messages = self.chain.invoke(query)
             if not messages: return "Error building context."
             
+            # 2. Try Primary LLM (Groq)
             return self.primary_llm.invoke(messages).content
-        except Exception as e:
-            logger.warning(f"Primary failed: {e}")
             
-            # Fallback loop
+        except Exception as e:
+            logger.warning(f"⚠️ Primary LLM (Groq) failed: {e}")
+            
+            # 3. Fallback Loop (OpenRouter)
             if messages:
-                for llm in self.fallback_llms:
+                for i, llm in enumerate(self.fallback_llms):
                     try:
+                        logger.info(f"🔄 Trying Fallback LLM #{i+1}...")
                         return llm.invoke(messages).content
-                    except:
+                    except Exception as fallback_err:
+                        logger.warning(f"Fallback #{i+1} failed: {fallback_err}")
                         continue
             
-            # Local fallback
+            # 4. Last Resort (Local Ollama)
             try:
+                logger.info("🔻 Switching to Local LLM (Phi3)...")
                 return self.local_llm.invoke(messages).content
-            except:
-                return "System temporarily unavailable."
+            except Exception as local_err:
+                return f"All systems unavailable. Last error: {local_err}"
 
 if __name__ == "__main__":
     pipeline = RAGPipeline()
