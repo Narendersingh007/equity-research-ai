@@ -109,6 +109,7 @@ pydantic-settings==2.12.0
 pydantic_core==2.41.5
 pydeck==0.9.1
 pyparsing==3.3.1
+pypdf==6.6.0
 PySocks==1.7.1
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.1
