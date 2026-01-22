@@ -17,7 +17,7 @@ from langchain_core.runnables import (
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_pinecone import PineconeVectorStore
 from langchain_openai import ChatOpenAI
-from langchain_community.chat_models import ChatOllama
+from langchain_ollama import ChatOllama
 from langchain_groq import ChatGroq  
 
 # --- Environment & Logging ---
