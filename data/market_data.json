@@ -2,299 +2,299 @@
   {
     "id": "TSLA",
     "name": "Tesla, Inc.",
-    "price": 447.2,
-    "change_percent": -39.2012,
-    "market_cap": 1487306358784,
+    "price": 449.06,
+    "change_percent": -0.0667589,
+    "market_cap": 1493492301824,
     "beta": 1.835,
-    "pe_ratio": 312.7273,
+    "pe_ratio": 311.8472,
     "sector": "Consumer Cyclical",
-    "last_updated": "2026-01-14T18:22:15.528063"
+    "last_updated": "2026-01-25T14:24:07.252668"
   },
   {
     "id": "NVDA",
     "name": "NVIDIA Corporation",
-    "price": 185.81,
-    "change_percent": 47.042,
-    "market_cap": 4523916001280,
+    "price": 187.67,
+    "change_percent": 1.59151,
+    "market_cap": 4569201377280,
     "beta": 2.314,
-    "pe_ratio": 46.106697,
+    "pe_ratio": 46.568233,
     "sector": "Technology",
-    "last_updated": "2026-01-14T18:22:16.114422"
+    "last_updated": "2026-01-25T14:24:07.383403"
   },
   {
     "id": "COIN",
     "name": "Coinbase Global, Inc. - 3",
-    "price": 252.69,
-    "change_percent": 399.622,
-    "market_cap": 68139778048,
+    "price": 216.95,
+    "change_percent": -2.77404,
+    "market_cap": 58502213632,
     "beta": 3.707,
-    "pe_ratio": 21.840105,
+    "pe_ratio": 18.7673,
     "sector": "Financial Services",
-    "last_updated": "2026-01-14T18:22:16.562260"
+    "last_updated": "2026-01-25T14:24:07.528189"
   },
   {
     "id": "MSTR",
     "name": "Strategy Inc",
-    "price": 172.99,
-    "change_percent": 663.2570000000001,
-    "market_cap": 50053730304,
+    "price": 163.11,
+    "change_percent": 1.3231488,
+    "market_cap": 47195004928,
     "beta": 3.433,
-    "pe_ratio": 7.1013956,
+    "pe_ratio": 6.6985626,
     "sector": "Technology",
-    "last_updated": "2026-01-14T18:22:16.919816"
+    "last_updated": "2026-01-25T14:24:07.661521"
   },
   {
     "id": "PLTR",
     "name": "Palantir Technologies Inc.",
-    "price": 178.96,
-    "change_percent": -25.081999999999997,
-    "market_cap": 426539778048,
+    "price": 169.6,
+    "change_percent": 2.23027,
+    "market_cap": 404230799360,
     "beta": 1.545,
-    "pe_ratio": 416.18607,
+    "pe_ratio": 403.80954,
     "sector": "Technology",
-    "last_updated": "2026-01-14T18:22:17.301878"
+    "last_updated": "2026-01-25T14:24:07.794748"
   },
   {
     "id": "AMD",
     "name": "Advanced Micro Devices, Inc.",
-    "price": 220.97,
-    "change_percent": 639.414,
-    "market_cap": 359748370432,
+    "price": 259.68,
+    "change_percent": 2.3450112,
+    "market_cap": 422769819648,
     "beta": 1.95,
-    "pe_ratio": 116.3,
+    "pe_ratio": 135.25,
     "sector": "Technology",
-    "last_updated": "2026-01-14T18:22:17.673173"
+    "last_updated": "2026-01-25T14:24:07.927039"
   },
   {
     "id": "NFLX",
     "name": "Netflix, Inc.",
-    "price": 90.32,
-    "change_percent": 101.213,
-    "market_cap": 382715035648,
+    "price": 86.12,
+    "change_percent": 3.08834,
+    "market_cap": 364918276096,
     "beta": 1.711,
-    "pe_ratio": 37.790794,
+    "pe_ratio": 34.039528,
     "sector": "Communication Services",
-    "last_updated": "2026-01-14T18:22:18.087541"
+    "last_updated": "2026-01-25T14:24:08.076607"
   },
   {
     "id": "META",
     "name": "Meta Platforms, Inc.",
-    "price": 631.09,
-    "change_percent": -169.477,
-    "market_cap": 1590679830528,
+    "price": 658.76,
+    "change_percent": 1.71857,
+    "market_cap": 1660422848512,
     "beta": 1.287,
-    "pe_ratio": 27.936699,
+    "pe_ratio": 29.148672,
     "sector": "Communication Services",
-    "last_updated": "2026-01-14T18:22:18.449963"
+    "last_updated": "2026-01-25T14:24:08.207018"
   },
   {
     "id": "SHOP",
     "name": "Shopify Inc.",
-    "price": 167.44,
-    "change_percent": -29.178199999999997,
-    "market_cap": 217980583936,
+    "price": 137.89,
+    "change_percent": 0.181633,
+    "market_cap": 179511115776,
     "beta": 2.84,
-    "pe_ratio": 123.117645,
+    "pe_ratio": 100.649635,
     "sector": "Technology",
-    "last_updated": "2026-01-14T18:22:18.811238"
+    "last_updated": "2026-01-25T14:24:08.337834"
   },
   {
     "id": "CRWD",
     "name": "CrowdStrike Holdings, Inc.",
-    "price": 468.02,
-    "change_percent": 22.0561,
-    "market_cap": 117987106816,
+    "price": 452.49,
+    "change_percent": -0.282081,
+    "market_cap": 114072018944,
     "beta": 1.029,
     "pe_ratio": 0.0,
     "sector": "Technology",
-    "last_updated": "2026-01-14T18:22:19.184096"
+    "last_updated": "2026-01-25T14:24:08.469859"
   },
   {
     "id": "AMZN",
     "name": "Amazon.com, Inc.",
-    "price": 242.6,
-    "change_percent": -157.017,
-    "market_cap": 2593446428672,
+    "price": 239.16,
+    "change_percent": 2.05684,
+    "market_cap": 2556672081920,
     "beta": 1.376,
-    "pe_ratio": 34.265537,
+    "pe_ratio": 33.779663,
     "sector": "Consumer Cyclical",
-    "last_updated": "2026-01-14T18:22:19.555952"
+    "last_updated": "2026-01-25T14:24:08.599915"
   },
   {
     "id": "GOOGL",
     "name": "Alphabet Inc.",
-    "price": 335.97,
-    "change_percent": 123.848,
-    "market_cap": 4069309546496,
+    "price": 327.93,
+    "change_percent": -0.780617,
+    "market_cap": 3971928031232,
     "beta": 1.086,
-    "pe_ratio": 33.100494,
+    "pe_ratio": 32.37216,
     "sector": "Communication Services",
-    "last_updated": "2026-01-14T18:22:19.921174"
+    "last_updated": "2026-01-25T14:24:08.727874"
   },
   {
     "id": "MSFT",
     "name": "Microsoft Corporation",
-    "price": 470.67,
-    "change_percent": -136.42600000000002,
-    "market_cap": 3498568581120,
+    "price": 465.95,
+    "change_percent": 3.3458,
+    "market_cap": 3463484014592,
     "beta": 1.073,
-    "pe_ratio": 33.452026,
+    "pe_ratio": 33.11656,
     "sector": "Technology",
-    "last_updated": "2026-01-14T18:22:20.289223"
+    "last_updated": "2026-01-25T14:24:08.860069"
   },
   {
     "id": "AAPL",
     "name": "Apple Inc.",
-    "price": 261.05,
-    "change_percent": 30.7392,
-    "market_cap": 3857366646784,
+    "price": 248.04,
+    "change_percent": -0.124829,
+    "market_cap": 3665126490112,
     "beta": 1.093,
-    "pe_ratio": 34.946453,
+    "pe_ratio": 33.20482,
     "sector": "Technology",
-    "last_updated": "2026-01-14T18:22:20.819167"
+    "last_updated": "2026-01-25T14:24:08.988838"
   },
   {
     "id": "CRM",
     "name": "Salesforce, Inc.",
-    "price": 241.06,
-    "change_percent": -707.016,
-    "market_cap": 229489115136,
+    "price": 228.05,
+    "change_percent": -0.017534,
+    "market_cap": 217103597568,
     "beta": 1.266,
-    "pe_ratio": 32.141335,
+    "pe_ratio": 30.487968,
     "sector": "Technology",
-    "last_updated": "2026-01-14T18:22:21.225306"
+    "last_updated": "2026-01-25T14:24:09.160672"
   },
   {
     "id": "UBER",
     "name": "Uber Technologies, Inc.",
-    "price": 85.41,
-    "change_percent": 87.3988,
-    "market_cap": 178115608576,
+    "price": 82.31,
+    "change_percent": -0.30281,
+    "market_cap": 171650809856,
     "beta": 1.203,
-    "pe_ratio": 44.025772,
+    "pe_ratio": 42.427834,
     "sector": "Technology",
-    "last_updated": "2026-01-14T18:22:21.658619"
+    "last_updated": "2026-01-25T14:24:09.295525"
   },
   {
     "id": "ABNB",
     "name": "Airbnb, Inc.",
-    "price": 140.07,
-    "change_percent": 112.628,
-    "market_cap": 85755854848,
+    "price": 132.15,
+    "change_percent": -1.23319,
+    "market_cap": 80906936320,
     "beta": 1.1,
-    "pe_ratio": 33.350002,
+    "pe_ratio": 31.464285,
     "sector": "Consumer Cyclical",
-    "last_updated": "2026-01-14T18:22:22.121543"
+    "last_updated": "2026-01-25T14:24:09.453743"
   },
   {
     "id": "SNOW",
     "name": "Snowflake Inc.",
-    "price": 209.39,
-    "change_percent": -494.37100000000004,
-    "market_cap": 71653261312,
+    "price": 209.69,
+    "change_percent": -0.682045,
+    "market_cap": 71755915264,
     "beta": 1.144,
     "pe_ratio": 0.0,
     "sector": "Technology",
-    "last_updated": "2026-01-14T18:22:22.687721"
+    "last_updated": "2026-01-25T14:24:09.616435"
   },
   {
     "id": "RBLX",
     "name": "Roblox Corporation",
-    "price": 84.8,
-    "change_percent": 1053.18,
-    "market_cap": 59523284992,
+    "price": 74.12,
+    "change_percent": -0.776431,
+    "market_cap": 52026720256,
     "beta": 1.641,
     "pe_ratio": 0.0,
     "sector": "Communication Services",
-    "last_updated": "2026-01-14T18:22:23.074766"
+    "last_updated": "2026-01-25T14:24:09.750023"
   },
   {
     "id": "SPOT",
     "name": "Spotify Technology S.A.",
-    "price": 534.64,
-    "change_percent": 87.5474,
-    "market_cap": 110079180800,
+    "price": 513.21,
+    "change_percent": 2.92195,
+    "market_cap": 105666871296,
     "beta": 1.658,
-    "pe_ratio": 68.455826,
+    "pe_ratio": 65.377075,
     "sector": "Communication Services",
-    "last_updated": "2026-01-14T18:22:23.478527"
+    "last_updated": "2026-01-25T14:24:09.885597"
   },
   {
     "id": "AVGO",
     "name": "Broadcom Inc.",
-    "price": 354.61,
-    "change_percent": 68.14099999999999,
-    "market_cap": 1681303011328,
+    "price": 320.05,
+    "change_percent": -1.67133,
+    "market_cap": 1517444530176,
     "beta": 1.218,
-    "pe_ratio": 74.03131,
+    "pe_ratio": 67.096436,
     "sector": "Technology",
-    "last_updated": "2026-01-14T18:22:23.857151"
+    "last_updated": "2026-01-25T14:24:10.019815"
   },
   {
     "id": "INTC",
     "name": "Intel Corporation",
-    "price": 47.29,
-    "change_percent": 733.091,
-    "market_cap": 225573306368,
+    "price": 45.07,
+    "change_percent": -17.0287,
+    "market_cap": 225124646912,
     "beta": 1.354,
-    "pe_ratio": 788.1667,
+    "pe_ratio": 0.0,
     "sector": "Technology",
-    "last_updated": "2026-01-14T18:22:24.207089"
+    "last_updated": "2026-01-25T14:24:10.150904"
   },
   {
     "id": "MRNA",
     "name": "Moderna, Inc.",
-    "price": 39.6,
-    "change_percent": 1702.13,
-    "market_cap": 15473051648,
+    "price": 48.71,
+    "change_percent": -6.09215,
+    "market_cap": 19032635392,
     "beta": 1.174,
     "pe_ratio": 0.0,
     "sector": "Healthcare",
-    "last_updated": "2026-01-14T18:22:24.714115"
+    "last_updated": "2026-01-25T14:24:10.282232"
   },
   {
     "id": "PFE",
     "name": "Pfizer, Inc.",
-    "price": 25.15,
-    "change_percent": -47.4875,
-    "market_cap": 142995554304,
+    "price": 25.65,
+    "change_percent": -0.0779137,
+    "market_cap": 145838407680,
     "beta": 0.433,
-    "pe_ratio": 14.622092,
+    "pe_ratio": 14.91279,
     "sector": "Healthcare",
-    "last_updated": "2026-01-14T18:22:25.097184"
+    "last_updated": "2026-01-25T14:24:10.427507"
   },
   {
     "id": "DIS",
     "name": "Walt Disney Company (The)",
-    "price": 112.98,
-    "change_percent": 14.1822,
-    "market_cap": 203130568704,
+    "price": 110.98,
+    "change_percent": -1.96979,
+    "market_cap": 198131367936,
     "beta": 1.442,
-    "pe_ratio": 16.493431,
+    "pe_ratio": 16.20146,
     "sector": "Communication Services",
-    "last_updated": "2026-01-14T18:22:25.483679"
+    "last_updated": "2026-01-25T14:24:10.562276"
   },
   {
     "id": "BA",
     "name": "Boeing Company (The)",
-    "price": 244.55,
-    "change_percent": 197.65699999999998,
-    "market_cap": 191500075008,
+    "price": 252.15,
+    "change_percent": 0.294336,
+    "market_cap": 197451399168,
     "beta": 1.163,
     "pe_ratio": 0.0,
     "sector": "Industrials",
-    "last_updated": "2026-01-14T18:22:26.003727"
+    "last_updated": "2026-01-25T14:24:10.693693"
   },
   {
     "id": "PYPL",
     "name": "PayPal Holdings, Inc.",
-    "price": 56.56,
-    "change_percent": -127.422,
-    "market_cap": 54036205568,
+    "price": 56.62,
+    "change_percent": -0.927389,
+    "market_cap": 54093524992,
     "beta": 1.427,
-    "pe_ratio": 11.3574295,
+    "pe_ratio": 11.369477,
     "sector": "Financial Services",
-    "last_updated": "2026-01-14T18:22:26.567756"
+    "last_updated": "2026-01-25T14:24:10.827570"
   },
   {
     "id": "SQ",
@@ -305,28 +305,28 @@
     "beta": 0.0,
     "pe_ratio": 0.0,
     "sector": "N/A",
-    "last_updated": "2026-01-14T18:22:27.064119"
+    "last_updated": "2026-01-25T14:24:10.962315"
   },
   {
     "id": "ENPH",
     "name": "Enphase Energy, Inc.",
-    "price": 36.37,
-    "change_percent": -84.5151,
-    "market_cap": 4759367680,
+    "price": 39.46,
+    "change_percent": -2.519764,
+    "market_cap": 5163724288,
     "beta": 1.348,
-    "pe_ratio": 24.910957,
+    "pe_ratio": 27.027395,
     "sector": "Technology",
-    "last_updated": "2026-01-14T18:22:27.439440"
+    "last_updated": "2026-01-25T14:24:11.093187"
   },
   {
     "id": "RIVN",
     "name": "Rivian Automotive, Inc.",
-    "price": 18.85,
-    "change_percent": -156.65800000000002,
-    "market_cap": 23108462592,
+    "price": 15.95,
+    "change_percent": -2.26716,
+    "market_cap": 19553312768,
     "beta": 1.776,
     "pe_ratio": 0.0,
     "sector": "Consumer Cyclical",
-    "last_updated": "2026-01-14T18:22:27.801515"
+    "last_updated": "2026-01-25T14:24:11.225168"
   }
 ]
