@@ -105,13 +105,17 @@ class RAGPipeline:
     # Helpers
 
 
-    def _extract_keywords(self, query: str) -> str:
+    def _extract_keywords(self, query) -> str:
+        if isinstance(query, dict):
+            query = query.get("question", "")
+
         stop_words = {
             "why", "is", "the", "what", "how", "when",
             "did", "does", "a", "an", "in", "on", "of", "for",
             "update", "with", "stock", "today", "news", "price"
         }
-        clean = query.translate(str.maketrans("", "", string.punctuation))
+
+        clean = str(query).translate(str.maketrans("", "", string.punctuation))
         return " ".join(w for w in clean.split() if w.lower() not in stop_words)
 
     def _get_robust_stock_news(self, ticker_or_company: str) -> str:
@@ -177,27 +181,95 @@ class RAGPipeline:
     def _get_embedding_query(self, inputs: Dict[str, Any]) -> str:
         return f"query: {inputs['question']}"
 
+    def _extract_sec_sources(self, docs):
+        sources = []
+        for doc in docs:
+            meta = doc.metadata or {}
+
+            company = meta.get("company")
+            form = meta.get("form", "10-K")
+            year = meta.get("year")
+
+            if company and year:
+                sources.append(f"{company} — FY{year} {form}")
+            elif meta.get("source"):
+                sources.append(meta["source"])
+
+        return list(dict.fromkeys(sources))[:3]
+
+
+    def _extract_news_sources(self, live_context: str):
+        sources = []
+        for block in live_context.split("SOURCE:")[1:]:
+            header = block.split("\n", 1)[0].strip()
+            if header:
+                sources.append(header)
+        return list(dict.fromkeys(sources))[:5]
     
     # Chain Construction
     
 
     def _build_chain(self):
         prompt = ChatPromptTemplate.from_template(
-            """You are a senior Equity Research Analyst AI.
-The user is asking about a SPECIFIC company.
-Use the LIVE_NEWS (Summaries) and HISTORY contexts to answer.
+    """
+You are a Senior Equity Research Analyst AI producing institutional-grade research briefs.
 
-<LIVE_NEWS_SUMMARIES>
+The user is asking about a SPECIFIC publicly listed company.
+Your response will be displayed in a professional research terminal.
+
+CRITICAL RULES:
+- Use ONLY the provided contexts.
+- Do NOT speculate beyond the evidence.
+- If data is insufficient, state that clearly.
+- Maintain a neutral, analyst tone (no hype, no financial advice).
+- Structure the answer clearly for readability.
+
+
+LIVE NEWS (Recent Developments)
+
 {live_context}
-</LIVE_NEWS_SUMMARIES>
 
-<HISTORY>
+
+HISTORICAL CONTEXT (SEC Filings / Prior Data)
+
 {historical_context}
-</HISTORY>
 
-Question: {question}
-Answer:"""
-        )
+
+TASK
+
+Answer the user’s question as a concise but thorough **Research Brief**.
+
+REQUIRED STRUCTURE:
+
+1. **Direct Answer**
+   - Address the question clearly in 2–4 sentences.
+
+2. **Key Supporting Points**
+   - Use bullet points or numbered points where appropriate.
+   - Reference concrete facts from the provided contexts.
+
+3. **Risk Factors / Uncertainty (if applicable)**
+   - Highlight known risks, limitations, or conflicting signals.
+
+4. **Source Attribution**
+   - Implicitly rely on:
+     - SEC filings → historical context
+     - News articles → live context
+   - Do NOT invent sources.
+
+
+QUESTION
+
+{question}
+
+
+RESEARCH BRIEF
+
+Write the answer in clean, well-formatted plain text.
+Do NOT include markdown headings.
+Do NOT include source lists.
+"""
+)
 
         retrieval = RunnableParallel(
             historical_context=(
@@ -215,35 +287,74 @@ Answer:"""
             | prompt
         )
 
-    def get_answer(self, query: str) -> str:
-        messages = None
+    def _build_context(self, query: str) -> Dict[str, str]:
+        retrieval = RunnableParallel(
+            historical_context=(
+                RunnableLambda(self._get_embedding_query)
+                | self.retriever
+                | self._format_docs
+            ),
+            live_context=RunnableLambda(self._fetch_live_news),
+        )
+
+        return retrieval.invoke({"question": query})
+
+    def get_answer(self, query: str) -> Dict[str, Any]:
         try:
-            # 1. Build context (News + History)
-            messages = self.chain.invoke(query)
-            if not messages: return "Error building context."
-            
-            # 2. Try Primary LLM (Groq)
-            return self.primary_llm.invoke(messages).content
-            
-        except Exception as e:
-            logger.warning(f"⚠️ Primary LLM (Groq) failed: {e}")
-            
-            # 3. Fallback Loop (OpenRouter)
-            if messages:
-                for i, llm in enumerate(self.fallback_llms):
-                    try:
-                        logger.info(f"🔄 Trying Fallback LLM #{i+1}...")
-                        return llm.invoke(messages).content
-                    except Exception as fallback_err:
-                        logger.warning(f"Fallback #{i+1} failed: {fallback_err}")
-                        continue
-            
-            # 4. Last Resort (Local Ollama)
+            context = self._build_context(query)
+
+            if not context:
+                return {
+                    "answer": "Unable to build research context.",
+                    "sources": {"sec": [], "news": []},
+                }
+
+            prompt_input = {
+                "question": query,
+                "live_context": context["live_context"],
+                "historical_context": context["historical_context"],
+            }
+
             try:
-                logger.info("🔻 Switching to Local LLM (Phi3)...")
-                return self.local_llm.invoke(messages).content
-            except Exception as local_err:
-                return f"All systems unavailable. Last error: {local_err}"
+                answer_text = self.primary_llm.invoke(
+                    self.chain.invoke(prompt_input)
+                ).content
+            except Exception:
+                answer_text = None
+                for llm in self.fallback_llms:
+                    try:
+                        answer_text = llm.invoke(
+                            self.chain.invoke(prompt_input)
+                        ).content
+                        break
+                    except Exception:
+                        continue
+
+                if not answer_text:
+                    answer_text = self.local_llm.invoke(
+                        self.chain.invoke(prompt_input)
+                    ).content
+
+            historical_docs = self.retriever.invoke(
+                self._get_embedding_query({"question": query})
+            )
+
+            sources = {
+                "sec": self._extract_sec_sources(historical_docs),
+                "news": self._extract_news_sources(context["live_context"]),
+            }
+
+            return {
+                "answer": answer_text.strip(),
+                "sources": sources,
+            }
+
+        except Exception as e:
+            logger.error(f"Error processing query: {e}")
+            return {
+                "answer": "The system encountered an internal error while generating the research brief.",
+                "sources": {"sec": [], "news": []},
+            }
 
 if __name__ == "__main__":
     pipeline = RAGPipeline()
