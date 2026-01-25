@@ -114,14 +114,6 @@ query = st.text_input(
     label_visibility="collapsed",
 )
 
-st.markdown(
-    """
-**Suggested questions**
-- What macro risks affect Big Tech in 2025?
-- Compare Apple and Microsoft revenue drivers
-- What are Nvidia’s key operational risks?
-"""
-)
 
 # --------------------------------------------------
 # RAG RESPONSE
