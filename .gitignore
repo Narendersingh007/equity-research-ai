@@ -219,3 +219,6 @@ venv.bak/
 chroma_db/
 __pycache__/venv/
 backend/data/
+
+
+data/market_data.json
