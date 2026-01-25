@@ -3,14 +3,21 @@ import json
 import os
 from datetime import datetime
 
-# Absolute base directory (repo root)
+# --------------------------------------------------
+# Resolve repository root
+# backend/update_prices.py -> repo root
+# --------------------------------------------------
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
-# Data directory and output file
-DATA_DIR = os.path.join(BASE_DIR, "data")
+# --------------------------------------------------
+# Streamlit-readable data location
+# --------------------------------------------------
+DATA_DIR = os.path.join(BASE_DIR, "frontend", "data")
 DATA_PATH = os.path.join(DATA_DIR, "market_data.json")
 
-# The "Volatile 30" List
+# --------------------------------------------------
+# Volatile 30 Universe
+# --------------------------------------------------
 TICKERS = [
     "TSLA", "NVDA", "COIN", "MSTR", "PLTR", "AMD", "NFLX", "META", "SHOP", "CRWD",
     "AMZN", "GOOGL", "MSFT", "AAPL", "CRM", "UBER", "ABNB", "SNOW", "RBLX", "SPOT",
@@ -18,18 +25,17 @@ TICKERS = [
 ]
 
 def update_market_data():
-    print(f"[{datetime.now().strftime('%H:%M:%S')}] Fetching market data...")
+    print(f"[{datetime.utcnow().strftime('%H:%M:%S')}] Fetching market data")
 
     market_data = []
 
-    tickers_str = " ".join(TICKERS)
-    tickers_data = yf.Tickers(tickers_str)
+    tickers = yf.Tickers(" ".join(TICKERS))
 
     for symbol in TICKERS:
         try:
-            info = tickers_data.tickers[symbol].info
+            info = tickers.tickers[symbol].info
 
-            company = {
+            market_data.append({
                 "id": symbol,
                 "name": info.get("shortName", symbol),
                 "price": info.get("currentPrice", 0.0),
@@ -39,22 +45,21 @@ def update_market_data():
                 "pe_ratio": info.get("trailingPE", 0.0),
                 "sector": info.get("sector", "N/A"),
                 "last_updated": datetime.utcnow().isoformat()
-            }
+            })
 
-            market_data.append(company)
             print(f"✓ {symbol}")
 
         except Exception as e:
             print(f"✗ {symbol}: {e}")
 
-    # Ensure data directory exists
+    # Ensure frontend data directory exists
     os.makedirs(DATA_DIR, exist_ok=True)
 
-    # Write JSON
+    # Write JSON for Streamlit
     with open(DATA_PATH, "w") as f:
         json.dump(market_data, f, indent=2)
 
-    print(f"Data written to {DATA_PATH}")
+    print(f"Market data written to {DATA_PATH}")
 
 if __name__ == "__main__":
     update_market_data()
