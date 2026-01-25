@@ -31,6 +31,6 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add data/market_data.json
+          git add frontend/data/market_data.json
           git commit -m "chore: daily market data update" || echo "No changes"
           git push
