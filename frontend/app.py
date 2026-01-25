@@ -77,38 +77,17 @@ section[data-testid="stSidebar"] {
     unsafe_allow_html=True,
 )
 
-# --------------------------------------------------
+
 # APPLICATION HEADER
-# --------------------------------------------------
+
 st.title("Equity Research AI Agent")
 st.caption("AI-driven equity research grounded in SEC filings and market news")
 st.divider()
 
 
-st.markdown(
-    """
-## Project Overview
 
-The **Equity Research AI Agent** is an intelligent research system designed to assist
-financial analysts, students, and investors in extracting high-quality insights from
-regulatory filings and financial news.
 
-The application leverages **Retrieval-Augmented Generation (RAG)** to ensure that
-responses are:
 
-- Grounded in primary sources such as SEC 10-K filings
-- Contextually accurate and traceable
-- Written in a concise, analyst-style format
-
-Instead of manually reviewing lengthy financial documents, users can ask natural
-language questions and receive structured, source-aware responses in seconds.
-
-This project emphasizes **reliability, transparency, and real-world financial analysis**
-over generic conversational output.
-"""
-)
-
-st.divider()
 
 
 with st.sidebar:
