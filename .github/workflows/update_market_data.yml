@@ -1,9 +1,9 @@
 name: Update Market Data
 
 on:
+  workflow_dispatch:
   schedule:
-    - cron: "0 1 * * *"   # Runs daily at 01:00 UTC
-  workflow_dispatch:      # Allows manual run from GitHub UI
+    - cron: "0 3 * * *"
 
 jobs:
   update-data:
