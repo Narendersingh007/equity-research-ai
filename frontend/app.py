@@ -3,156 +3,213 @@ import pandas as pd
 import sys
 import os
 import time
+import requests
+import plotly.express as px
 
-# --- PATH SETUP (Crucial for importing backend) ---
-# This allows us to import from the 'backend' folder
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# --------------------------------------------------
+# PATH SETUP (Allows backend imports)
+# --------------------------------------------------
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 try:
     from backend.search_logic import RAGPipeline
 except ImportError:
-    st.error("⚠️ Could not import Backend. Please run the app from the root directory: `streamlit run frontend/app.py`")
+    st.error(
+        "⚠️ Backend not found.\n\n"
+        "Run from project root:\n"
+        "`streamlit run frontend/app.py`"
+    )
     st.stop()
 
-# --- PAGE CONFIG ---
+# --------------------------------------------------
+# PAGE CONFIG
+# --------------------------------------------------
 st.set_page_config(
-    layout="wide", 
-    page_title="Equity Research AI",
-    page_icon="📈"
+    page_title="Equity Research AI Agent",
+    page_icon="📈",
+    layout="wide",
 )
 
-# --- CSS STYLING ---
-st.markdown("""
+# --------------------------------------------------
+# GLOBAL STYLING (Dark, Institutional)
+# --------------------------------------------------
+st.markdown(
+    """
 <style>
-    .metric-card {
-        background-color: #0E1117;
-        padding: 15px;
-        border-radius: 10px;
-        border: 1px solid #30333F;
-        text-align: center;
-    }
-    .stTextInput > div > div > input {
-        background-color: #262730;
-        color: white; 
-    }
-    .ai-answer {
-        background-color: #1E1E1E;
-        padding: 20px;
-        border-radius: 10px;
-        border-left: 5px solid #4CAF50;
-        margin-top: 20px;
-    }
+body {
+    background-color: #0E1117;
+}
+.stTextInput > div > div > input {
+    background-color: #1E1E1E;
+    color: white;
+}
+.ai-answer {
+    background-color: #161A23;
+    padding: 20px;
+    border-radius: 10px;
+    border-left: 4px solid #4CAF50;
+    margin-top: 1rem;
+}
+.section-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-top: 1.5rem;
+}
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
-# --- HEADER ---
+# --------------------------------------------------
+# HEADER
+# --------------------------------------------------
 st.title("📈 Equity Research AI Agent")
-st.markdown("**Live Market Data • RAG Analysis • SEC Filings (10-K)**")
+st.caption(
+    "Live RAG Analysis · SEC Filings (10-K) · Market News Intelligence"
+)
 
-# --- SIDEBAR: AI BRAIN CONTROL ---
+st.divider()
+
+# --------------------------------------------------
+# SIDEBAR — SYSTEM CONTEXT
+# --------------------------------------------------
 with st.sidebar:
-    st.header("⚙️ Neural Engine")
-    
-    # Initialize Pipeline (Cached so it doesn't reload on every click)
+    st.header("🧠 Neural Engine")
+
     @st.cache_resource
     def load_pipeline():
         return RAGPipeline()
-    
-    with st.spinner("🧠 Loading AI Models..."):
+
+    with st.spinner("Initializing models..."):
         try:
             rag = load_pipeline()
-            st.success("✅ System Online")
+            st.success("System Online")
         except Exception as e:
-            st.error(f"❌ System Offline: {e}")
+            st.error(f"Initialization failed:\n{e}")
             st.stop()
-            
-    st.markdown("---")
-    st.info(f"**Connected Index:** `{os.getenv('INDEX_NAME', 'finance-news')}`")
-    st.markdown("### 📚 Ingested Knowledge")
-    st.code("NVDA (2024 10-K)\nTSLA (Coming Soon)\nAAPL (Coming Soon)")
 
-# --- MAIN SEARCH AREA ---
-col_search, col_stats = st.columns([2, 1])
+    st.divider()
 
-with col_search:
-    st.subheader("🤖 Ask the Analyst")
-    query = st.text_input(
-        "Query", 
-        placeholder="e.g., 'What are Nvidia's specific supply chain risks?'",
-        label_visibility="collapsed"
+    st.markdown("**Vector Index**")
+    st.code(os.getenv("INDEX_NAME", "finance-news"))
+
+    st.markdown("**Retrieval Strategy**")
+    st.text("Top-10 semantic chunks")
+
+    st.divider()
+
+    st.markdown("### 📚 Coverage Universe")
+    st.text(
+        "NVDA\nAAPL\nMSFT\nAMZN\nTSLA\nMETA\n+24 more"
     )
 
-    if query:
-        st.write("---")
-        with st.spinner("🔎 Reading 10-K Reports & Checking Live News..."):
-            # 1. Timer Start
-            start_time = time.time()
-            
-            # 2. Get Answer from Backend
-            response = rag.get_answer(query)
-            
-            # 3. Calculate Speed
-            duration = time.time() - start_time
-            
-        # 4. Display Result
-        st.markdown(f"**⏱️ Analysis generated in {duration:.2f} seconds**")
-        st.markdown(f"""
-        <div class="ai-answer">
-            {response}
-        </div>
-        """, unsafe_allow_html=True)
+# --------------------------------------------------
+# QUERY INPUT
+# --------------------------------------------------
+st.subheader("🤖 Ask the Analyst")
 
-# --- MARKET DATA DASHBOARD ---
-st.markdown("---")
+query = st.text_input(
+    label="Query",
+    placeholder="e.g. What are Nvidia’s primary supply chain risks?",
+    label_visibility="collapsed",
+)
+
+st.markdown(
+    """
+**Suggested questions**
+- What macro risks affect Big Tech in 2025?
+- Compare Apple and Microsoft revenue drivers
+- What are Nvidia’s key operational risks?
+"""
+)
+
+# --------------------------------------------------
+# RAG RESPONSE
+# --------------------------------------------------
+if query:
+    with st.spinner("Analyzing filings and market news..."):
+        start = time.time()
+
+        try:
+            response = rag.get_answer(query)
+        except Exception as e:
+            st.error(f"Analysis failed: {e}")
+            st.stop()
+
+        latency = time.time() - start
+
+    st.markdown(f"⏱️ _Generated in {latency:.2f} seconds_")
+
+    st.markdown(
+        f"""
+<div class="ai-answer">
+<strong>Equity Research Insight</strong><br><br>
+{response}
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+# --------------------------------------------------
+# MARKET INTELLIGENCE DASHBOARD
+# --------------------------------------------------
+st.divider()
 st.subheader("📊 Market Intelligence")
 
-data_path = "backend/data/market_data.json"
-if os.path.exists(data_path):
+DATA_PATH = "backend/data/market_data.json"
+
+@st.cache_data
+def load_market_data(path):
+    return pd.read_json(path)
+
+if os.path.exists(DATA_PATH):
     try:
-        # 1. Load Data
-        df = pd.read_json(data_path)
-        if 'id' in df.columns: df = df.rename(columns={'id': 'ticker'})
-        
-        # 2. Key Metrics
-        m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Tracked Companies", len(df))
-        m2.metric("Avg P/E Ratio", f"{df['pe_ratio'].mean():.2f}")
-        m3.metric("High Volatility (>1.5)", df[df['beta'] > 1.5].shape[0])
-        m4.metric("Sector Spread", df['sector'].nunique())
+        df = load_market_data(DATA_PATH)
 
-        # 3. NATIVE PLOTLY HEATMAP (Browser-Safe)
+        if "id" in df.columns:
+            df = df.rename(columns={"id": "ticker"})
+
+        # Metrics
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Tracked Companies", len(df))
+        c2.metric("Avg P/E Ratio", f"{df['pe_ratio'].mean():.2f}")
+        c3.metric("High Volatility (>1.5β)", df[df["beta"] > 1.5].shape[0])
+        c4.metric("Sector Spread", df["sector"].nunique())
+
         st.markdown("### 🗺️ Sector Heatmap")
-        
-        import plotly.express as px
-        
-        # Ensure we have numeric data for the chart
-        df['market_cap'] = pd.to_numeric(df['market_cap'], errors='coerce').fillna(0)
-        df['change_percent'] = pd.to_numeric(df['change_percent'], errors='coerce').fillna(0)
 
-        # Create the Tree Map
+        # Data safety
+        df["market_cap"] = pd.to_numeric(df["market_cap"], errors="coerce").fillna(0)
+        df["change_percent"] = pd.to_numeric(df["change_percent"], errors="coerce").fillna(0)
+
         fig = px.treemap(
             df,
-            path=[px.Constant("Market"), 'sector', 'ticker'], # Hierarchy: Market -> Sector -> Company
-            values='market_cap',                              # Size of block = Market Cap
-            color='change_percent',                           # Color of block = Price Change
-            color_continuous_scale='RdYlGn',                  # Red to Green
-            color_continuous_midpoint=0,                      # Zero is the center (Yellow/White)
-            hover_data={'price': True, 'pe_ratio': True, 'market_cap': ':.2e'},
-            title=''
+            path=[px.Constant("Market"), "sector", "ticker"],
+            values="market_cap",
+            color="change_percent",
+            color_continuous_scale="RdYlGn",
+            color_continuous_midpoint=0,
+            hover_data={
+                "price": True,
+                "pe_ratio": True,
+                "market_cap": ":.2e",
+            },
         )
-        
-        # Style it to look like a Dark Mode Terminal
+
         fig.update_layout(
             margin=dict(t=0, l=0, r=0, b=0),
             height=500,
-            paper_bgcolor='rgba(0,0,0,0)',  # Transparent background
-            plot_bgcolor='rgba(0,0,0,0)',
-            font=dict(family="Monospace", color="white")
+            paper_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="white", family="Monospace"),
         )
-        
-        st.plotly_chart(fig, use_container_width=True)
+
+        st.plotly_chart(fig, width="stretch")
 
     except Exception as e:
-        st.error(f"Error loading dashboard: {e}")
+        st.error(f"Market dashboard error: {e}")
+
 else:
-    st.warning("⚠️ Market data file not found. Run `python backend/update_prices.py` to populate this table.")
+    st.warning(
+        "Market data not found.\n\n"
+        "Run `python backend/update_prices.py` to generate it."
+    )
