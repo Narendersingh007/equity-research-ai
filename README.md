@@ -245,28 +245,11 @@ ERA is designed for correctness and reliability, but it intentionally makes seve
 
 ## Future Enhancements & Roadmap
 
-The current ERA system establishes a robust, retrieval-first foundation. Planned enhancements focus on deeper analysis, improved usability, and production hardening.
-
-- **Conversational Research Memory**  
-  Introduce session-level and long-term conversational memory, allowing follow-up questions, multi-step reasoning, and analyst-style research threads while preserving source grounding.
-
-- **Full-Featured Interactive Frontend**  
-  Build a dedicated research dashboard with query history, document citations, latency metrics, and comparison views across companies, moving beyond a minimal UI to a true analyst terminal experience.
-
-- **Always-On Deployment Architecture**  
-  Transition to a serverless or hybrid always-on setup (e.g., managed background workers + edge APIs) to ensure continuous availability without manual restarts.
-
-- **Premium LLM Integration**  
-  Add optional paid-tier LLMs (e.g., GPT-4.1 / Claude Opus class models) for deeper reasoning, longer context windows, and improved synthesis on complex disclosures.
-
-- **Cross-Document & Cross-Company Analysis**  
-  Enable comparative queries across multiple companies or filings (e.g., sector-wide risk exposure, supply chain concentration), extending beyond single-entity analysis.
-
-- **Expanded Financial Coverage**  
-  Extend ingestion beyond 10-K filings to include 10-Qs, earnings call transcripts, investor presentations, and non-US regulatory disclosures.
-
-- **Intelligent Research Suggestions**  
-  Surface proactive follow-up questions, risk flags, and thematic trends derived from retrieved context to guide deeper analyst investigation.
-
-- **Evaluation & Quality Metrics**  
-  Introduce automated evaluation pipelines to measure retrieval accuracy, citation coverage, and response faithfulness over time.
+- Conversational memory for multi-step, analyst-style research threads
+- Full-featured interactive frontend (citations, comparisons, latency insights)
+- Always-on, serverless deployment for continuous availability
+- Optional premium LLMs for deeper reasoning and larger context windows
+- Cross-company and cross-document comparative analysis
+- Expanded coverage beyond 10-Ks (10-Qs, earnings calls, global filings)
+- Intelligent follow-up suggestions and automated risk flags
+- Evaluation pipelines for retrieval accuracy and response faithfulness
