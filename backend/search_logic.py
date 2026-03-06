@@ -7,7 +7,7 @@ import trafilatura
 from typing import Dict, Any
 from dotenv import load_dotenv
 
-# --- LangChain imports ---
+#  LangChain imports 
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import (
     RunnablePassthrough,
@@ -20,7 +20,7 @@ from langchain_openai import ChatOpenAI
 from langchain_ollama import ChatOllama
 from langchain_groq import ChatGroq  
 
-# --- Environment & Logging ---
+#  Environment & Logging 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 load_dotenv()
 
@@ -33,7 +33,7 @@ logging.basicConfig(
 logging.getLogger('trafilatura').setLevel(logging.CRITICAL)
 logger = logging.getLogger(__name__)
 
-# --- Configuration ---
+# Configuration 
 EMBEDDING_MODEL = "intfloat/e5-small-v2"
 INDEX_NAME = os.getenv("INDEX_NAME")
 
@@ -48,26 +48,24 @@ class RAGPipeline:
     """
 
     def __init__(self):
-        # 1️⃣ Embeddings
+        # Embedding
         logger.info("Loading embedding model...")
         self.embeddings = HuggingFaceEmbeddings(
             model_name=EMBEDDING_MODEL,
             encode_kwargs={"normalize_embeddings": True},
         )
 
-        # 2️⃣ Vector Store
+        # Vector Store
         self.vectorstore = PineconeVectorStore(
             index_name=INDEX_NAME,
             embedding=self.embeddings,
             pinecone_api_key=os.getenv("PINECONE_API_KEY"),
         )
 
-        # 3️⃣ Retriever
+        # Retriever
         self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 6})
 
-        # 4️⃣ LLMs Setup
-        
-
+        # LLMs Setup
         groq_key = os.getenv("GROQ_API_KEY")
         if not groq_key:
             logger.warning("⚠️ GROQ_API_KEY missing! Primary LLM might fail.")
@@ -97,14 +95,12 @@ class RAGPipeline:
         # LAST RESORT: Local Ollama
         self.local_llm = ChatOllama(model="phi3", temperature=0.3)
 
-        # 5️⃣ Build chain
+        #  Build chain
         self.chain = self._build_chain()
         logger.info("✅ RAG Chain initialized.")
 
 
     # Helpers
-
-
     def _extract_keywords(self, query) -> str:
         if isinstance(query, dict):
             query = query.get("question", "")
@@ -131,7 +127,6 @@ class RAGPipeline:
         
         feed = None
         try:
-            # We must download the XML ourselves because feedparser gets blocked by Google
             headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
             resp = requests.get(rss_url, headers=headers, timeout=5)
             feed = feedparser.parse(resp.content)
@@ -144,7 +139,7 @@ class RAGPipeline:
         if not feed or not feed.entries:
             return "No relevant news found via RSS."
         
-        # --- PROCESS TOP 10 SUMMARIES ---
+        #  PROCESS TOP 10 SUMMARIES 
         limit = 10
         logger.info(f"Found {len(feed.entries)} articles. Extracting top {limit} summaries...")
 
@@ -153,10 +148,9 @@ class RAGPipeline:
             source = entry.source.title if hasattr(entry, 'source') else "Unknown"
             published = entry.published if hasattr(entry, 'published') else "Unknown"
             
-            # Just grab the summary provided by Google
+
             summary_raw = entry.summary if hasattr(entry, 'summary') else ""
             
-            # Clean HTML tags from the summary
             content = ""
             try:
                 summary_clean = trafilatura.extract(summary_raw)
@@ -207,7 +201,6 @@ class RAGPipeline:
         return list(dict.fromkeys(sources))[:5]
     
     # Chain Construction
-    
 
     def _build_chain(self):
         prompt = ChatPromptTemplate.from_template(
