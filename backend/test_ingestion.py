@@ -1,26 +1,17 @@
 import os
 import time
 from dotenv import load_dotenv
-# LangChain Imports
 from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_pinecone import PineconeVectorStore
 
-# Load environment variables (takes PINECONE_API_KEY and INDEX_NAME)
-load_dotenv()
 
-# ==========================================
-# CONFIGURATION (Matches your screenshot)
-# ==========================================
-# CRITICAL: This must match whatever you use in search_logic.py
+load_dotenv()
 EMBEDDING_MODEL_NAME = "intfloat/e5-small-v2"
 INDEX_NAME = os.getenv("INDEX_NAME")
 
-# ==========================================
-# 1. THE DUMMY DATA GENERATOR
-# ==========================================
-# Realistic-looking fake risk factors for testing
+
 DUMMY_TSLA_TEXT = """
 TESLA, INC. - ANNUAL REPORT (FORM 10-K) - RISK FACTORS SECTION (TEST DATA)
 
@@ -40,19 +31,19 @@ The following are significant risk factors that could affect our business:
 def run_test_pipeline():
     print("--- Starting Test Ingestion Pipeline ---")
     
-    # --- Step A: Create dummy text file locally ---
+
     os.makedirs('data', exist_ok=True)
     temp_file_path = 'data/temp_tsla_dummy.txt'
     with open(temp_file_path, 'w') as f:
         f.write(DUMMY_TSLA_TEXT)
     print(f"✅ Generated dummy data file at: {temp_file_path}")
 
-    # --- Step B: Load and Chunk text ---
+
     print("Start loading and chunking...")
     loader = TextLoader(temp_file_path)
     raw_docs = loader.load()
     
-    # Split text into smaller pieces for embeddings
+
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=400,
         chunk_overlap=50
@@ -60,23 +51,22 @@ def run_test_pipeline():
     chunks = text_splitter.split_documents(raw_docs)
     print(f"✅ Split text into {len(chunks)} chunks.")
 
-    # --- Step C: Add Metadata ---
-    # This is crucial so you know WHICH company this text belongs to
+
     TICKER = "TSLA"
     for chunk in chunks:
         chunk.metadata["ticker"] = TICKER
         chunk.metadata["source"] = "dummy_test_data"
 
-    # --- Step D: Initialize Embeddings (Matches your setup) ---
+
     print(f"⚡ Loading embedding model: {EMBEDDING_MODEL_NAME} (This runs locally, might take a moment first time)...")
     # This uses your local CPU/GPU to turn text into numbers
     embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
 
-    # --- Step E: Upsert to Pinecone ---
+
     print(f"🚀 Uploading chunks to Pinecone Index: '{INDEX_NAME}'...")
     start_time = time.time()
     
-    # This line does the magic: embeds the text and sends it to Pinecone
+
     vectorstore = PineconeVectorStore.from_documents(
         chunks,
         index_name=INDEX_NAME,
@@ -84,14 +74,14 @@ def run_test_pipeline():
     )
     
     end_time = time.time()
-    print(f"🎉 SUCCESS! Uploaded {len(chunks)} vectors in {end_time - start_time:.2f} seconds.")
+    print(f" SUCCESS! Uploaded {len(chunks)} vectors in {end_time - start_time:.2f} seconds.")
     
-    # Cleanup local file
+
     os.remove(temp_file_path)
     print("🧹 Cleaned up temporary local file.")
 
 if __name__ == "__main__":
-    # Ensure you have .env file with PINECONE_API_KEY and INDEX_NAME before running
+
     if not os.getenv("PINECONE_API_KEY") or not os.getenv("INDEX_NAME"):
         print("❌ ERROR: Missing PINECONE_API_KEY or INDEX_NAME in .env file.")
     else:
