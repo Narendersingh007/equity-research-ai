@@ -3,21 +3,13 @@ import json
 import os
 from datetime import datetime
 
-# --------------------------------------------------
-# Resolve repository root
-# backend/update_prices.py -> repo root
-# --------------------------------------------------
+
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
-# --------------------------------------------------
-# Streamlit-readable data location
-# --------------------------------------------------
 DATA_DIR = os.path.join(BASE_DIR, "frontend", "data")
 DATA_PATH = os.path.join(DATA_DIR, "market_data.json")
 
-# --------------------------------------------------
-# Volatile 30 Universe
-# --------------------------------------------------
+
 TICKERS = [
     "TSLA", "NVDA", "COIN", "MSTR", "PLTR", "AMD", "NFLX", "META", "SHOP", "CRWD",
     "AMZN", "GOOGL", "MSFT", "AAPL", "CRM", "UBER", "ABNB", "SNOW", "RBLX", "SPOT",
@@ -52,10 +44,10 @@ def update_market_data():
         except Exception as e:
             print(f"✗ {symbol}: {e}")
 
-    # Ensure frontend data directory exists
+
     os.makedirs(DATA_DIR, exist_ok=True)
 
-    # Write JSON for Streamlit
+
     with open(DATA_PATH, "w") as f:
         json.dump(market_data, f, indent=2)
 
