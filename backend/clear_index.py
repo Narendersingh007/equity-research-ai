@@ -3,7 +3,7 @@ import time
 from pinecone import Pinecone
 from dotenv import load_dotenv
 
-# Load environment variables
+
 load_dotenv()
 
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
@@ -14,23 +14,23 @@ def clear_index():
         print("❌ Error: Missing Pinecone credentials in .env")
         return
 
-    print(f"🧹 Connecting to Pinecone Index: {INDEX_NAME}...")
+    print(f" Connecting to Pinecone Index: {INDEX_NAME}...")
     
-    # Initialize Client
+
     pc = Pinecone(api_key=PINECONE_API_KEY)
     index = pc.Index(INDEX_NAME)
 
-    # Check stats before
+
     stats = index.describe_index_stats()
     count = stats.get('total_vector_count', 0)
     print(f"📉 Current Vector Count: {count}")
 
     if count == 0:
-        print("✅ Index is already empty.")
+        print("Index is already empty.")
         return
 
-    # Delete All
-    confirm = input(f"⚠️  WARNING: You are about to DELETE ALL {count} vectors. Type 'DELETE' to confirm: ")
+
+    confirm = input(f"  WARNING: You are about to DELETE ALL {count} vectors. Type 'DELETE' to confirm: ")
     
     if confirm == "DELETE":
         print("🔥 Deleting all vectors... (This may take a few seconds)")
@@ -44,7 +44,7 @@ def clear_index():
         new_count = stats.get('total_vector_count', 0)
         print(f"✨ Done! New Vector Count: {new_count}")
     else:
-        print("❌ Operation cancelled.")
+        print(" Operation cancelled.")
 
 if __name__ == "__main__":
     clear_index()
