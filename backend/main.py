@@ -13,13 +13,13 @@ except ImportError:
 
     from search_logic import RAGPipeline
 
-# CONFIGURATION 
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("FastAPI")
 
 app = FastAPI(title="Equity Research AI API", version="1.0.0")
 
-# CORS POLICY 
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -28,7 +28,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-#  DATA MODELS 
+
 class ChatRequest(BaseModel):
     query: str
     ticker: Optional[str] = None
@@ -40,7 +40,7 @@ class ChatResponse(BaseModel):
     sources: Dict[str, List[str]]
     processing_time: float
 
-#  GLOBAL STATE 
+
 rag_engine = None
 
 @app.on_event("startup")
@@ -53,7 +53,6 @@ async def startup_event():
     except Exception as e:
         logger.critical(f"❌ Failed to initialize RAG: {e}")
 
-#  ENDPOINTS 
 
 @app.get("/")
 async def root():
