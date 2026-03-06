@@ -4,8 +4,6 @@ ERA is a **production-grade Retrieval-Augmented Generation (RAG) system** design
 
 Unlike generic LLM chatbots that rely on static, pre-trained knowledge, ERA retrieves and reasons over **primary financial disclosures and live market signals**, producing concise, analyst-style research briefs with explicit source grounding.
 
----
-> This README is structured so readers can skim section headers or dive deep into specific components.
 
 ## Executive Summary
 
