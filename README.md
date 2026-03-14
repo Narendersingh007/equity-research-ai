@@ -249,5 +249,4 @@ ERA is designed for correctness and reliability, but it intentionally makes seve
 - Optional premium LLMs for deeper reasoning and larger context windows
 - Cross-company and cross-document comparative analysis
 - Expanded coverage beyond 10-Ks (10-Qs, earnings calls, global filings)
-- Intelligent follow-up suggestions and automated risk flags
 - Evaluation pipelines for retrieval accuracy and response faithfulness
